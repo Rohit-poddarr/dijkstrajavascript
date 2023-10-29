@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #sorted-nodes {
+            margin-top: 20px;
+        }
+    </style>
+    <title>Node Arrangement</title>
+</head>
+<body>
+    <h2>Node Arrangement</h2>
+    
+    <label for="numNodes">Number of Nodes:</label>
+    <input type="number" id="numNodes" min="2" value="4">
+
+    <label for="numEdges">Number of Edges:</label>
+    <input type="number" id="numEdges" min="1" value="4" oninput="addEdgeInput()">
+
+    <label for="sourceNode">Source Node:</label>
+    <input type="number" id="sourceNode" min="1" value="1">
+
+    <div id="edges-container">
+        <!-- Edge inputs will be added here dynamically -->
+    </div>
+
+    <button onclick="arrangeNodes()">Arrange Nodes</button>
+
+    <div id="sorted-nodes">
+        <h3>Sorted Nodes:</h3>
+        <ul id="nodes-list"></ul>
+    </div>
+
+    <script>
+        function arrangeNodes() {
+            const numNodes = parseInt(document.getElementById("numNodes").value);
+            const numEdges = parseInt(document.getElementById("numEdges").value);
+            const sourceNode = parseInt(document.getElementById("sourceNode").value);
+
+            const graph = createGraph(numNodes);
+
+            for (let i = 0; i < numEdges; i++) {
+                const nodeA = parseInt(document.getElementById(`edge${i}a`).value);
+                const nodeB = parseInt(document.getElementById(`edge${i}b`).value);
+                const cost = parseInt(document.getElementById(`edge${i}c`).value);
+                graph[nodeA].push({ node: nodeB, cost });
+            }
+
+            const distances = dijkstra(graph, sourceNode);
+
+            // Sort nodes based on their distances from the source node, excluding the source node
+            const sortedNodes = Object.keys(distances)
+                .filter(node => node != sourceNode)
+                .map(node => ({ node, cost: distances[node] }))
+                .sort((a, b) => a.cost - b.cost);
+
+            displaySortedNodes(sortedNodes);
+        }
+
+        function createGraph(numNodes) {
+            const graph = {};
+            for (let i = 1; i <= numNodes; i++) {
+                graph[i] = [];
+            }
+            return graph;
+        }
+
+        function dijkstra(graph, startNode) {
+            const distances = {};
+            const visited = {};
+            const queue = [];
+
+            for (const node in graph) {
+                distances[node] = node == startNode ? 0 : Infinity;
+                visited[node] = false;
+                queue.push(node);
+            }
+
+            while (queue.length > 0) {
+                const current = queue.sort((a, b) => distances[a] - distances[b])[0];
+                queue.splice(queue.indexOf(current), 1);
+
+                for (const neighbor of graph[current]) {
+                    const alt = distances[current] + neighbor.cost;
+                    if (alt < distances[neighbor.node]) {
+                        distances[neighbor.node] = alt;
+                    }
+                }
+            }
+
+            return distances;
+        }
+
+        function displaySortedNodes(sortedNodes) {
+            const nodesList = document.getElementById("nodes-list");
+            nodesList.innerHTML = "";
+
+            for (let i = 0; i < sortedNodes.length; i++) {
+                const listItem = document.createElement("li");
+                listItem.textContent = `Node ${sortedNodes[i].node}, Cost ${sortedNodes[i].cost}`;
+                nodesList.appendChild(listItem);
+            }
+        }
+
+        function addEdgeInput() {
+            const edgesContainer = document.getElementById("edges-container");
+            const numEdges = document.getElementById("numEdges").value;
+
+            edgesContainer.innerHTML = "";
+
+            for (let i = 0; i < numEdges; i++) {
+                const edgeInput = document.createElement("div");
+                edgeInput.innerHTML = `
+                    <label for="edge${i}a">Edge ${i + 1}:</label>
+                    <input type="number" id="edge${i}a" placeholder="Node A" required>
+                    <input type="number" id="edge${i}b" placeholder="Node B" required>
+                    <input type="number" id="edge${i}c" placeholder="Cost" required>
+                `;
+                edgesContainer.appendChild(edgeInput);
+            }
+        }
+
+        // Call addEdgeInput on page load to set up initial edge inputs
+        addEdgeInput();
+    </script>
+</body>
+</html>
